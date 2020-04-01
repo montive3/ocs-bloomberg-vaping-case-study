@@ -11,10 +11,19 @@ output:
         number_sections: false
 ---
 
+```{r, echo=FALSE}
+knit_time_start <- Sys.time()
+```
+
 # Must do
 
-- Improve spacings {e.g. SHIFT + RETURN}
-- Ensure document follows a reasonable data science + epidemiologic trajectory 
+- Add weights
+- Add flavors
+- Possibly add marketing data
+- All nicotine use vs just e-cigarettes
+- See if Huang data is available
+- Find key marketing points
+
 
 # Overview
 
@@ -68,8 +77,168 @@ library(readxl)
 
 <p style="color:red">read_excel is used to import the data. Although this is pretty slow.</p>
 
-```{r}
-start_time_a <- Sys.time()
+```{r, echo=FALSE, eval=FALSE}
+tbl <- list.files(recursive = TRUE,
+                  pattern = "*.xlsx") %>% 
+  map(~read_excel(.))
+
+tbl_names <- list.files(recursive = TRUE,
+                        pattern = "*.xlsx") %>%
+  str_extract("nyts[2][0][1][5-9]")
+
+names(tbl) <- tbl_names
+
+tbl[["nyts2015"]] <- tbl[["nyts2015"]] %>%
+    dplyr::select(finwgt,
+                  Qn1, #Age
+                  Qn2, #Sex
+                  Qn3, #Grade
+                  starts_with("Qn4"), #Hispanic/Latino
+                  starts_with("Qn5"), #Race,
+                  starts_with("E",
+                              ignore.case = FALSE),
+                  starts_with("C",
+                              ignore.case = FALSE),
+                  EFLAVCIGTS,
+                  CFLAVCIGTS,
+                  EFLAVCIGAR,
+                  )
+
+tbl[["nyts2016"]] <- tbl[["nyts2016"]] %>%
+    dplyr::select(finwgt,
+                  Q1, #Age
+                  Q2, #Sex
+                  Q3, #Grade
+                  starts_with("Q4"), #Hispanic/Latino
+                  starts_with("Q5"), #Race
+                  starts_with("E",
+                              ignore.case = FALSE),
+                  starts_with("C",
+                              ignore.case = FALSE),
+                  EFLAVCIGAR,
+                  Q50A, #Menthol # What flavors of tobacco products have you used in the past 30 days? (Select one or more)
+                  Q50B, #Clove or spice
+                  Q50C, #Fruit
+                  Q50D, #Chocolate
+                  Q50E, #Alcoholic Drink
+                  Q50F, #Candy/Desserts/Other Sweets
+                  Q50G, #Some Other Flavor Not Listed Here
+                  Q50H #I Did Not Use Flavored Tobacco Products In the Past
+                  ) 
+
+tbl[["nyts2017"]] <- tbl[["nyts2017"]] %>%
+    dplyr::select(finwgt,
+                  Q1, #Age
+                  Q2, #Sex
+                  Q3, #Grade
+                  starts_with("Q4"), #Hispanic/Latino
+                  starts_with("Q5"), #Race
+                  starts_with("E",
+                              ignore.case = FALSE),
+                  starts_with("C",
+                              ignore.case = FALSE),
+                  CBIDIS,
+                  Q50A, #Menthol # What flavors of tobacco products have you used in the past 30 days? (Select one or more)
+                  Q50B, #Clove or spice
+                  Q50C, #Fruit
+                  Q50D, #Chocolate
+                  Q50E, #Alcoholic Drink
+                  Q50F, #Candy/Desserts/Other Sweets
+                  Q50G, #Some Other Flavor Not Listed Here
+                  Q50H #I Did Not Use Flavored Tobacco Products In the Past
+                  )
+
+tbl[["nyts2018"]] <- tbl[["nyts2018"]] %>%
+    dplyr::select(finwgt,
+                  Q1, #Age
+                  Q2, #Sex
+                  Q3, #Grade
+                  starts_with("Q4"), #Hispanic/Latino
+                  starts_with("Q5"), #Race
+                  starts_with("E",
+                              ignore.case = FALSE),
+                  starts_with("C",
+                              ignore.case = FALSE),
+                  Q50A, #Menthol # What flavors of tobacco products have you used in the past 30 days? (Select one or more)
+                  Q50B, #Clove or spice
+                  Q50C, #Fruit
+                  Q50D, #Chocolate
+                  Q50E, #Alcoholic Drink
+                  Q50F, #Candy/Desserts/Other Sweets
+                  Q50G, #Some Other Flavor Not Listed Here
+                  Q50H #I Did Not Use Flavored Tobacco Products In the Past
+                  )
+
+tbl[["nyts2019"]] <- tbl[["nyts2019"]] %>%
+    dplyr::select(finwgt,
+                  Q1, #Age
+                  Q2, #Sex
+                  Q3, #Grade
+                  starts_with("Q4"), #Hispanic/Latino
+                  starts_with("Q5"), #Race
+                  starts_with("E",
+                              ignore.case = FALSE),
+                  starts_with("C",
+                              ignore.case = FALSE),
+                  EHTP,
+                  CHTP,
+                  Q40, #Brang, e-cigarettes
+                  Q62A, #Menthol # What flavors of tobacco products have you used in the past 30 days? (Select one or more)
+                  Q62B, #Clove or spice
+                  Q62C, #Fruit 
+                  Q62D, #Chocolate
+                  Q62E, #Alcoholic Drink
+                  Q62F, #Candy/Desserts/Other Sweets
+                  Q62G, #Some Other Flavor Not Listed Here 
+                  )
+
+dir.create("data_reduced",
+           showWarnings = FALSE)
+
+mapply(write_csv, tbl, path=paste0("data_reduced/",
+                                   names(tbl),
+                                   '.csv')
+       )
+```
+
+```{r, echo=FALSE, include=FALSE}
+start_time <- Sys.time()
+csvs <- list.files(recursive = TRUE,
+                   pattern = "*.csv") %>% 
+  map(~read_csv(.))
+end_time <- Sys.time()
+
+test_time <- end_time - start_time
+
+time_message <- paste("Duration of data import:",
+      round(as.numeric(test_time) ,3),
+      units(test_time)
+      )
+
+csvs_names <- list.files(recursive = TRUE,
+                         pattern = "*.csv") %>%
+  str_extract("nyts[2][0][1][5-9]")
+
+names(csvs) <- csvs_names
+
+data <- csvs
+```
+
+<p style="color:red">New code: `r time_message`. Previously about 2 minutes with `read_excel()`.</p>
+
+```{r, eval=FALSE}
+data <- list.files(recursive = TRUE,
+                   pattern = "*.xlsx") %>% 
+  map(~read_excel(.))
+
+data_names <- list.files(recursive = TRUE,
+                         pattern = "*.xlsx") %>%
+  str_extract("nyts[2][0][1][5-9]")
+
+names(data) <- data_names
+
+names(data)
+```
 
 data_2015 <- read_excel("2015-nyts-dataset-and-codebook-microsoft-excel/nyts2015.xlsx")
 data_2016 <- read_excel("2016-nyts-dataset-and-codebook-microsoft-excel/nyts2016.xlsx")
@@ -77,39 +246,40 @@ data_2017 <- read_excel("2017-nyts-dataset-and-codebook-microsoft-excel/nyts2017
 data_2018 <- read_excel("2018-nyts-dataset-and-codebook-microsoft-excel/nyts2018.xlsx")
 data_2019 <- read_excel("2019-nyts-dataset-and-codebook-microsoft-excel/nyts2019.xlsx")
 
-end_time_a <- Sys.time()
-
-test_a_time <- end_time_a - start_time_a
-
-time_message <- paste("Duration of data import:",
-      round(as.numeric(test_a_time),1),
-      units(test_a_time)
-      )
-```
-
-<p style="color:red">`r time_message`</p>
-
-```{r}
-dim(data_2015)
-dim(data_2016)
-dim(data_2017)
-dim(data_2018)
-dim(data_2019)
-```
-
 <p style="color:red">Each year of data was prepared prior for a join. The starts_with() function, suggested by Carrie, was particularly useful for making the code more legible.</p>
 
 ```{r}
-data_2015 <- data_2015 %>%
-    dplyr::select(Qn2,
-                  starts_with("E"),
-                  starts_with("C"),
+data[["nyts2015"]] <- data[["nyts2015"]] %>%
+    dplyr::select(finwgt,
+                  Qn1, #Age
+                  Qn2, #Sex
+                  Qn3, #Grade
+                  starts_with("Qn4"), #Hispanic/Latino
+                  starts_with("Qn5"), #Race
+                  starts_with("E",
+                              ignore.case = FALSE),
+                  starts_with("C",
+                              ignore.case = FALSE),
                   -EFLAVCIGTS,
                   -CFLAVCIGTS,
                   -EFLAVCIGAR,
                   ) %>%
-    rename(female=Qn2) %>%
-    mutate(brand_ecig=NA,
+    rename(Age=Qn1,
+           female=Qn2,
+           Grade=Qn3,
+           Not_HL=Qn4a,
+           HL_Mex=Qn4b,
+           HL_PR=Qn4c,
+           HL_Cub=Qn4d,
+           HL_Other=Qn4e,
+           Race_AIAN=Qn5a,
+           Race_Asian=Qn5b,
+           Race_BAA=Qn5c,
+           Race_NHOPI=Qn5d,
+           Race_White=Qn5e) %>%
+    mutate(Age=Age+8,
+           Grade=Grade+5,
+           brand_ecig=NA,
            menthol=NA,
            clove_spice=NA,
            fruit=NA,
@@ -118,13 +288,13 @@ data_2015 <- data_2015 %>%
            candy_dessert_sweets=NA,
            other=NA,
            no_use=NA) %>%
-    mutate(year=2015)
+  dplyr::select(-starts_with("Q"))
 ```
 
 <p style="color:red">Each year of data was summarised with the summary() function. This made recoding more easily understood in the next step.</p>
 
 ```{r}
-sapply(data_2015, function(x)
+sapply(data[["nyts2015"]], function(x)
     summary(
         factor(x)
         )
@@ -135,12 +305,44 @@ sapply(data_2015, function(x)
 
 ```{r}
 #Note about difference between recode and fct_recode
-data_2015 <- data_2015 %>%
-    mutate(female=recode(female,
+data[["nyts2015"]] <- data[["nyts2015"]] %>%
+  mutate(Age=as.character(Age),
+         Grade=as.character(Grade)
+         ) %>%
+  mutate(Age=recode(Age,
+                    `19` = "19+",
+                    ),
+         female=recode(female,
                       `1`= FALSE,
                       `2` = TRUE,
-                      .missing=NA)) %>%
-    mutate_at(vars(ECIGT:CBIDIS),
+                      .missing=NA),
+         Grade=recode(Grade,
+                      `13` = "Ungraded/Other"),
+         Not_HL=recode(Not_HL,
+                       `1` = TRUE),
+         HL_Mex=recode(HL_Mex,
+                       `1` = TRUE),
+         HL_PR=recode(HL_PR,
+                      `1` = TRUE),
+         HL_Cub=recode(HL_Cub,
+                      `1` = TRUE),
+         HL_Other=recode(HL_Other,
+                      `1` = TRUE),
+         Race_AIAN=recode(Race_AIAN,
+                          `1` = TRUE),
+         Race_Asian=recode(Race_Asian,
+                           `1` = TRUE),
+         Race_BAA=recode(Race_BAA,
+                         `1` = TRUE),
+         Race_NHOPI=recode(Race_NHOPI,
+                           `1` = TRUE),
+         Race_White=recode(Race_White,
+                           `1` = TRUE)
+         ) %>%
+  mutate_at(vars(starts_with("E",
+                               ignore.case = FALSE),
+                   starts_with("C",
+                               ignore.case = FALSE)),
               list(~recode(.,
                            `1` = TRUE,
                            `2` = FALSE,
@@ -150,10 +352,17 @@ data_2015 <- data_2015 %>%
 <p style="color:red">The above process was repeated for each year of data using information gathered from the codebooks.</p>
 
 ```{r}
-data_2016 <- data_2016 %>%
-    dplyr::select(Q2,
-                  starts_with("E"),
-                  starts_with("C"),
+data[["nyts2016"]] <- data[["nyts2016"]] %>%
+    dplyr::select(finwgt,
+                  Q1, #Age
+                  Q2, #Sex
+                  Q3, #Grade
+                  starts_with("Q4"), #Hispanic/Latino
+                  starts_with("Q5"), #Race
+                  starts_with("E",
+                              ignore.case = FALSE),
+                  starts_with("C",
+                              ignore.case = FALSE),
                   -EFLAVCIGAR,
                   Q50A, #Menthol # What flavors of tobacco products have you used in the past 30 days? (Select one or more)
                   Q50B, #Clove or spice
@@ -164,7 +373,20 @@ data_2016 <- data_2016 %>%
                   Q50G, #Some Other Flavor Not Listed Here
                   Q50H #I Did Not Use Flavored Tobacco Products In the Past
                   ) %>%
-    rename(female=Q2,
+    rename(Age=Q1,
+           female=Q2,
+           Grade=Q3,
+           Not_HL=Q4A,
+           HL_Mex=Q4B,
+           HL_PR=Q4C,
+           HL_Cub=Q4D,
+           HL_Other=Q4E,
+           Race_AIAN=Q5A,
+           Race_Asian=Q5B,
+           Race_BAA=Q5C,
+           Race_NHOPI=Q5D,
+           Race_White=Q5E,
+           female=Q2,
            menthol=Q50A,
            clove_spice=Q50B,
            fruit=Q50C,
@@ -173,21 +395,50 @@ data_2016 <- data_2016 %>%
            candy_dessert_sweets=Q50F,
            other=Q50G,
            no_use=Q50H) %>%
-    mutate(brand_ecig=NA,
-           year=2016)
+    mutate(brand_ecig=NA) %>%
+  dplyr::select(-starts_with("Q"))
 
-sapply(data_2016, function(x)
+sapply(data[["nyts2016"]], function(x)
     summary(
         factor(x)
         )
     )
 
-data_2016 <- data_2016 %>%
-    mutate(female=recode(female,
+data[["nyts2016"]] <- data[["nyts2016"]] %>%
+  mutate(Age=as.character(Age),
+         Grade=as.character(Grade)
+         ) %>%
+  mutate(Age=recode(Age,
+                    `19` = "19+",
+                    ),
+         female=recode(female,
                       `1`= FALSE,
                       `2` = TRUE,
                       .default = NA,
-                      .missing = NA)) %>%
+                      .missing = NA),
+         Grade=recode(Grade,
+                      `13` = "Ungraded/Other"),
+         Not_HL=recode(Not_HL,
+                       `1` = TRUE),
+         HL_Mex=recode(HL_Mex,
+                       `1` = TRUE),
+         HL_PR=recode(HL_PR,
+                      `1` = TRUE),
+         HL_Cub=recode(HL_Cub,
+                      `1` = TRUE),
+         HL_Other=recode(HL_Other,
+                      `1` = TRUE),
+         Race_AIAN=recode(Race_AIAN,
+                          `1` = TRUE),
+         Race_Asian=recode(Race_Asian,
+                           `1` = TRUE),
+         Race_BAA=recode(Race_BAA,
+                         `1` = TRUE),
+         Race_NHOPI=recode(Race_NHOPI,
+                           `1` = TRUE),
+         Race_White=recode(Race_White,
+                           `1` = TRUE)
+         ) %>%
     mutate_at(vars(ECIGT:CBIDIS),
               list(~recode(.,
                            `1` = TRUE,
@@ -200,10 +451,17 @@ data_2016 <- data_2016 %>%
 ```
 
 ```{r}
-data_2017 <- data_2017 %>%
-    dplyr::select(Q2,
-                  starts_with("E"),
-                  starts_with("C"),
+data[["nyts2017"]] <- data[["nyts2017"]] %>%
+    dplyr::select(finwgt,
+                  Q1, #Age
+                  Q2, #Sex
+                  Q3, #Grade
+                  starts_with("Q4"), #Hispanic/Latino
+                  starts_with("Q5"), #Race
+                  starts_with("E",
+                              ignore.case = FALSE),
+                  starts_with("C",
+                              ignore.case = FALSE),
                   CBIDIS,
                   Q50A, #Menthol # What flavors of tobacco products have you used in the past 30 days? (Select one or more)
                   Q50B, #Clove or spice
@@ -214,7 +472,20 @@ data_2017 <- data_2017 %>%
                   Q50G, #Some Other Flavor Not Listed Here
                   Q50H #I Did Not Use Flavored Tobacco Products In the Past
                   ) %>%
-    rename(female=Q2,
+    rename(Age=Q1,
+           female=Q2,
+           Grade=Q3,
+           Not_HL=Q4A,
+           HL_Mex=Q4B,
+           HL_PR=Q4C,
+           HL_Cub=Q4D,
+           HL_Other=Q4E,
+           Race_AIAN=Q5A,
+           Race_Asian=Q5B,
+           Race_BAA=Q5C,
+           Race_NHOPI=Q5D,
+           Race_White=Q5E,
+           female=Q2,
            menthol=Q50A,
            clove_spice=Q50B,
            fruit=Q50C,
@@ -223,21 +494,50 @@ data_2017 <- data_2017 %>%
            candy_dessert_sweets=Q50F,
            other=Q50G,
            no_use=Q50H) %>%
-    mutate(brand_ecig=NA,
-           year=2017)
+    mutate(brand_ecig=NA) %>%
+  dplyr::select(-starts_with("Q"))
 
-sapply(data_2017, function(x)
+sapply(data[["nyts2017"]], function(x)
     summary(
         factor(x)
         )
     )
 
-data_2017 <- data_2017 %>%
-    mutate(female=recode(female,
+data[["nyts2017"]] <- data[["nyts2017"]] %>%
+  mutate(Age=as.character(Age),
+         Grade=as.character(Grade)
+         ) %>%
+  mutate(Age=recode(Age,
+                    `19` = "19+",
+                    ),
+         female=recode(female,
                       `1`= FALSE,
                       `2` = TRUE,
                       .default = NA,
-                      .missing = NA)) %>%
+                      .missing = NA),
+         Grade=recode(Grade,
+                      `13` = "Ungraded/Other"),
+         Not_HL=recode(Not_HL,
+                       `1` = TRUE),
+         HL_Mex=recode(HL_Mex,
+                       `1` = TRUE),
+         HL_PR=recode(HL_PR,
+                      `1` = TRUE),
+         HL_Cub=recode(HL_Cub,
+                      `1` = TRUE),
+         HL_Other=recode(HL_Other,
+                      `1` = TRUE),
+         Race_AIAN=recode(Race_AIAN,
+                          `1` = TRUE),
+         Race_Asian=recode(Race_Asian,
+                           `1` = TRUE),
+         Race_BAA=recode(Race_BAA,
+                         `1` = TRUE),
+         Race_NHOPI=recode(Race_NHOPI,
+                           `1` = TRUE),
+         Race_White=recode(Race_White,
+                           `1` = TRUE)
+         ) %>%
     mutate_at(vars(ECIGT:CBIDIS),
               list(~recode(.,
                            `1` = TRUE,
@@ -250,10 +550,17 @@ data_2017 <- data_2017 %>%
 ```
 
 ```{r}
-data_2018 <- data_2018 %>%
-    dplyr::select(Q2,
-                  starts_with("E"),
-                  starts_with("C"),
+data[["nyts2018"]] <- data[["nyts2018"]] %>%
+    dplyr::select(finwgt,
+                  Q1, #Age
+                  Q2, #Sex
+                  Q3, #Grade
+                  starts_with("Q4"), #Hispanic/Latino
+                  starts_with("Q5"), #Race
+                  starts_with("E",
+                              ignore.case = FALSE),
+                  starts_with("C",
+                              ignore.case = FALSE),
                   Q50A, #Menthol # What flavors of tobacco products have you used in the past 30 days? (Select one or more)
                   Q50B, #Clove or spice
                   Q50C, #Fruit
@@ -263,7 +570,20 @@ data_2018 <- data_2018 %>%
                   Q50G, #Some Other Flavor Not Listed Here
                   Q50H #I Did Not Use Flavored Tobacco Products In the Past
                   ) %>%
-    rename(female=Q2,
+    rename(Age=Q1,
+           female=Q2,
+           Grade=Q3,
+           Not_HL=Q4A,
+           HL_Mex=Q4B,
+           HL_PR=Q4C,
+           HL_Cub=Q4D,
+           HL_Other=Q4E,
+           Race_AIAN=Q5A,
+           Race_Asian=Q5B,
+           Race_BAA=Q5C,
+           Race_NHOPI=Q5D,
+           Race_White=Q5E,
+           female=Q2,
            menthol=Q50A,
            clove_spice=Q50B,
            fruit=Q50C,
@@ -272,26 +592,51 @@ data_2018 <- data_2018 %>%
            candy_dessert_sweets=Q50F,
            other=Q50G,
            no_use=Q50H) %>%
-    mutate(brand_ecig=NA,
-           year=2018)
+    mutate(brand_ecig=NA) %>%
+  dplyr::select(-starts_with("Q"))
 
-sapply(data_2018, function(x)
+sapply(data[["nyts2018"]], function(x)
     summary(
         factor(x)
         )
     )
 
-data_2018 <- data_2018 %>%
-    mutate(female=recode(female,
+data[["nyts2018"]] <- data[["nyts2018"]] %>%
+    mutate(Age=recode(Age,
+                    `19` = "19+",
+                    ),
+         female=recode(female,
                       `1`= FALSE,
                       `2` = TRUE,
                       .default = NA,
-                      .missing = NA)) %>%
-    mutate_at(vars(ECIGT:CBIDIS),
-              list(~recode(.,
-                           `1` = TRUE,
-                           `2` = FALSE,
-                           .missing = FALSE))) %>%
+                      .missing = NA),
+         Grade=recode(Grade,
+                      `13` = "Ungraded/Other"),
+         Not_HL=recode(Not_HL,
+                       `1` = TRUE),
+         HL_Mex=recode(HL_Mex,
+                       `1` = TRUE),
+         HL_PR=recode(HL_PR,
+                      `1` = TRUE),
+         HL_Cub=recode(HL_Cub,
+                      `1` = TRUE),
+         HL_Other=recode(HL_Other,
+                      `1` = TRUE),
+         Race_AIAN=recode(Race_AIAN,
+                          `1` = TRUE),
+         Race_Asian=recode(Race_Asian,
+                           `1` = TRUE),
+         Race_BAA=recode(Race_BAA,
+                         `1` = TRUE),
+         Race_NHOPI=recode(Race_NHOPI,
+                           `1` = TRUE),
+         Race_White=recode(Race_White,
+                           `1` = TRUE)
+         ) %>%
+  mutate_at(vars(ECIGT:CBIDIS), list(~recode(.,
+                                               `1` = TRUE,
+                                               `2` = FALSE,
+                                               .missing = NA))) %>%
     mutate_at(vars(menthol:no_use),
               list(~recode(.,
                            `1` = TRUE,
@@ -299,10 +644,17 @@ data_2018 <- data_2018 %>%
 ```
 
 ```{r}
-data_2019 <- data_2019 %>%
-    dplyr::select(Q2,
-                  starts_with("E"),
-                  starts_with("C"),
+data[["nyts2019"]] <- data[["nyts2019"]] %>%
+    dplyr::select(finwgt,
+                  Q1, #Age
+                  Q2, #Sex
+                  Q3, #Grade
+                  starts_with("Q4"), #Hispanic/Latino
+                  starts_with("Q5"), #Race
+                  starts_with("E",
+                              ignore.case = FALSE),
+                  starts_with("C",
+                              ignore.case = FALSE),
                   -EHTP,
                   -CHTP,
                   Q40, #Brang, e-cigarettes
@@ -315,6 +667,19 @@ data_2019 <- data_2019 %>%
                   Q62G, #Some Other Flavor Not Listed Here 
                   )  %>%
     rename(brand_ecig=Q40,
+           Age=Q1,
+           female=Q2,
+           Grade=Q3,
+           Not_HL=Q4A,
+           HL_Mex=Q4B,
+           HL_PR=Q4C,
+           HL_Cub=Q4D,
+           HL_Other=Q4E,
+           Race_AIAN=Q5A,
+           Race_Asian=Q5B,
+           Race_BAA=Q5C,
+           Race_NHOPI=Q5D,
+           Race_White=Q5E,
            female=Q2,
            menthol=Q62A,
            clove_spice=Q62B,
@@ -324,19 +689,55 @@ data_2019 <- data_2019 %>%
            candy_dessert_sweets=Q62F,
            other=Q62G) %>%
     mutate(no_use="missing") %>%
-    mutate(year=2019)
+  dplyr::select(-starts_with("Q"))
 
-sapply(data_2019, function(x)
+sapply(data[["nyts2019"]], function(x)
     summary(
         factor(x)
         )
     )
 
-data_2019 <- data_2019 %>%
-    mutate(female=recode(female,
+data[["nyts2019"]] <- data[["nyts2019"]] %>%
+  mutate(Age=recode(Age,
+                    `19` = "19+",
+                    ),
+         female=recode(female,
                       `1`= FALSE,
                       `2` = TRUE,
-                      .default = NA)) %>%
+                      .default = NA),
+         Grade=recode(Grade,
+                      `13` = "Ungraded/Other"),
+         Not_HL=recode(Not_HL,
+                       `1` = TRUE,
+                      .default = NA),
+         HL_Mex=recode(HL_Mex,
+                       `1` = TRUE,
+                      .default = NA),
+         HL_PR=recode(HL_PR,
+                      `1` = TRUE,
+                      .default = NA),
+         HL_Cub=recode(HL_Cub,
+                      `1` = TRUE,
+                      .default = NA),
+         HL_Other=recode(HL_Other,
+                      `1` = TRUE,
+                      .default = NA),
+         Race_AIAN=recode(Race_AIAN,
+                          `1` = TRUE,
+                      .default = NA),
+         Race_Asian=recode(Race_Asian,
+                           `1` = TRUE,
+                      .default = NA),
+         Race_BAA=recode(Race_BAA,
+                         `1` = TRUE,
+                      .default = NA),
+         Race_NHOPI=recode(Race_NHOPI,
+                           `1` = TRUE,
+                      .default = NA),
+         Race_White=recode(Race_White,
+                           `1` = TRUE,
+                      .default = NA)
+         ) %>%
     mutate_at(vars(ECIGT:CBIDIS), list(~recode(.,
                                                `1` = TRUE,
                                                `2` = FALSE,
@@ -357,12 +758,12 @@ data_2019 <- data_2019 %>%
                            `.S` = FALSE,
                            .default = NA,
                            .missing = NA)))
+```
 
-data <- data_2015 %>%
-    rbind(data_2016) %>%
-    rbind(data_2017) %>%
-    rbind(data_2018) %>%
-    rbind(data_2019)
+```{r}
+data <- data %>%
+  map_df(bind_rows, .id = "year") %>%
+  mutate(year=as.numeric(str_remove(year,"nyts")))
 
 sapply(data, class)
 
@@ -441,8 +842,7 @@ data %>%
                                Category == "E-cigarettes, Ever" ~ "E-cigarettes",
                                Category == "Cigarettes, Current" ~ "Cigarettes",
                                Category == "E-cigarettes, Current" ~ "E-cigarettes")) %>%
-    ggplot(aes(x=year,y=Percentage, color=Product)) +
-    facet_wrap(Use~., ncol=1, scales = "free_y") +
+    ggplot(aes(x=year,y=Percentage, color=Product, linetype=Use)) +
     geom_point() +
     geom_line() + 
     theme_classic() +
@@ -494,62 +894,9 @@ data %>%
                            Category =="non_ecig_ever_year" ~ "Non-E-Cigarettes",
                            Category =="ecig_current_year" ~ "E-cigarettes",
                            Category =="non_ecig_current_year" ~ "Non-E-Cigarettes")) %>%
-    ggplot(aes(x=year,y=Percentage, color=Use)) +
-    facet_wrap(Product~., ncol=1) +
+    ggplot(aes(x=year,y=Percentage, color=Product, linetype=Use)) +
     geom_point() +
     geom_line() +
-    theme_classic() +
-    theme(legend.position = "bottom",
-          axis.text.x = element_text(angle = 90),
-          axis.title.x = element_blank()) +
-    labs(title = "Student Use of Nicotine Products",
-         subtitle = "E-Cigarette and Non-E-Cigarette Products",
-         y = "Percent of Students")
-```
-
-<p style="color:red">SAME QUESTION: How have vaping rates influenced tobacco/nicotine use?</p>
-
-<p style="color:red">To compare the vaping and non-vaping use head to head I created two figures. The first is a simple bar chart.</p>
-
-```{r, fig.width=7, fig.height=7}
-data %>%
-    mutate(ecig_sum_ever = select(., EELCIGT) %>%
-               apply(1, sum, na.rm=TRUE),
-           ecig_sum_current = select(., CELCIGT) %>%
-               apply(1, sum, na.rm=TRUE),
-           non_ecig_sum_ever = select(., ECIGT:EBIDIS) %>%
-               select(.,-EELCIGT) %>%
-               apply(1, sum, na.rm=TRUE),
-           non_ecig_sum_current = select(., CCIGT:CBIDIS) %>%
-               select(.,-CELCIGT) %>%
-               apply(1, sum, na.rm=TRUE)) %>%
-    mutate(ecig_ever = case_when(ecig_sum_ever > 0 ~ TRUE,
-                                    ecig_sum_ever ==0 ~ FALSE),
-           ecig_current = case_when(ecig_sum_current > 0 ~ TRUE,
-                                    ecig_sum_current ==0 ~ FALSE),
-           non_ecig_ever = case_when(non_ecig_sum_ever > 0 ~ TRUE,
-                                    non_ecig_sum_ever ==0 ~ FALSE),
-           non_ecig_current = case_when(non_ecig_sum_current > 0 ~ TRUE,
-                                    non_ecig_sum_current ==0 ~ FALSE)) %>%
-    group_by(year) %>%
-    summarise(ecig_ever_year=sum(ecig_ever, na.rm = TRUE)*100/sum(!is.na(ecig_ever)),
-              ecig_current_year=sum(ecig_current, na.rm = TRUE)*100/sum(!is.na(ecig_current)),
-              non_ecig_ever_year=sum(non_ecig_ever, na.rm = TRUE)*100/sum(!is.na(non_ecig_ever)),
-              non_ecig_current_year=sum(non_ecig_current, na.rm = TRUE)*100/sum(!is.na(non_ecig_current))) %>%
-    gather(key=Category,
-           value=Percentage,
-           -year) %>%
-    mutate(Use = case_when(Category =="ecig_ever_year" ~ "Ever",
-                           Category =="non_ecig_ever_year" ~ "Ever",
-                           Category =="ecig_current_year" ~ "Current",
-                           Category =="non_ecig_current_year" ~ "Current")) %>%
-    mutate(Product = case_when(Category =="ecig_ever_year" ~ "E-cigarettes",
-                           Category =="non_ecig_ever_year" ~ "Non-E-Cigarettes",
-                           Category =="ecig_current_year" ~ "E-cigarettes",
-                           Category =="non_ecig_current_year" ~ "Non-E-Cigarettes")) %>%
-    ggplot(aes(x=year,y=Percentage, fill=Product)) +
-    facet_wrap(Use~., ncol=1) +
-    geom_bar(position = "dodge", stat = "identity") +
     theme_classic() +
     theme(legend.position = "bottom",
           axis.text.x = element_text(angle = 90),
@@ -648,8 +995,7 @@ data %>%
                                Category == "E-cigarettes, Current" ~ "Current")) %>%
     mutate(Sex = case_when(female == TRUE ~ "Females",
                                female == FALSE ~ "Males")) %>%
-    ggplot(aes(x=year,y=Percentage, color=Sex)) +
-    facet_wrap(Use~., ncol=1, scales = "free_y") +
+    ggplot(aes(x=year,y=Percentage, color=Sex, linetype=Use)) +
     geom_point() +
     geom_line() + 
     theme_classic() +
@@ -697,3 +1043,18 @@ knitr::include_graphics("HuangJ_DuanZ_KwokJ_et_al_TobaccoControl_Figure1.png")
 # Notes
 
 Ever and current variables are limited to those shared by all years of data included in this case study.
+
+```{r, echo=FALSE}
+knit_time_end <- Sys.time()
+```
+
+```{r, echo=FALSE}
+knit_time <- knit_time_end - knit_time_start
+knit_time_message <- paste("Knit time:",
+      round(as.numeric(knit_time) ,3),
+      units(knit_time)
+      )
+```
+
+<p style="color:red">New code: `r knit_time_message`. Previous code: ~ 3 m. </p>
+
